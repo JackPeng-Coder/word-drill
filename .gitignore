@@ -1,0 +1,11 @@
+node_modules/
+dist/
+public/data/
+reports/
+test-results/
+playwright-report/
+.vite/
+*.log
+.DS_Store
+
+qwerty-dicts/

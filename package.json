@@ -1,0 +1,45 @@
+{
+  "name": "worddrill",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "单词排查器 — 本地运行的背单词练习与排查工具",
+  "scripts": {
+    "dev": "vite --port 5178 --strictPort",
+    "build": "vite build",
+    "preview": "vite preview --port 5178 --strictPort",
+    "start": "node scripts/build-data.mjs && vite preview --port 5178 --strictPort",
+    "build:data": "node scripts/build-data.mjs",
+    "build:data:force": "node scripts/build-data.mjs --force",
+    "audit:options": "node scripts/audit-options.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test"
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "pnpm",
+      "version": "12.18.0",
+      "onFail": "download"
+    }
+  },
+  "packageManager": "pnpm@12.18.0",
+  "dependencies": {
+    "@fontsource/fraunces": "^5.3.0",
+    "idb-keyval": "^6.3.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zustand": "^5.1.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.0",
+    "@types/node": "^26.6.6",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.2.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.6",
+    "vitest": "^5.1.0"
+  }
+}
