@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react';
 import { useAppStore } from '../store/appStore';
 import { downloadText, todayStamp } from '../lib/download';
+import { buildBundle, collectMistaken, exportUnmasteredTxt, parseBundle } from '../store/transfer';
 
 type TxtFormat = 'word' | 'gloss' | 'posGloss';
 
@@ -17,9 +18,13 @@ export default function DataBank() {
   const [importMode, setImportMode] = useState<'merge' | 'replace'>('merge');
   const [txtFormat, setTxtFormat] = useState<TxtFormat>('word');
   const [txtSort, setTxtSort] = useState<'errors' | 'alpha'>('errors');
-  const [includeUnseen, setIncludeUnseen] = useState(false);
   const [confirmText, setConfirmText] = useState('');
   const fileRef = useRef<HTMLInputElement>(null);
+
+  const exportable = useMemo(
+    () => (dict ? collectMistaken(dictMeta?.id, dict.words, stats).length : 0),
+    [dict, dictMeta, stats],
+  );
 
   const totals = useMemo(() => {
     let seen = 0;
@@ -35,8 +40,7 @@ export default function DataBank() {
     return { seen, mastered, unmastered, words: Object.keys(stats).length };
   }, [stats]);
 
-  const exportJson = async () => {
-    const { buildBundle } = await import('../store/transfer');
+  const exportJson = () => {
     const bundle = buildBundle(settings, stats);
     downloadText(
       `worddrill-存档-${todayStamp()}.json`,
@@ -49,7 +53,6 @@ export default function DataBank() {
   const onFileChange = async (file: File | null) => {
     if (!file) return;
     const text = await file.text();
-    const { parseBundle } = await import('../store/transfer');
     const parsed = parseBundle(text);
     if (!parsed.ok) {
       showToast(parsed.error, 'error');
@@ -65,17 +68,15 @@ export default function DataBank() {
       showToast('请先在练习台选择一本词表', 'warn');
       return;
     }
-    const { exportUnmasteredTxt } = await import('../store/transfer');
     const text = exportUnmasteredTxt({
       dictId: dictMeta.id,
       words: dict.words,
       stats,
       format: txtFormat,
       sort: txtSort,
-      includeUnseen,
     });
     if (!text.trim()) {
-      showToast('没有符合条件的单词', 'warn');
+      showToast('还没有选错过的词，暂无可导出的内容', 'warn');
       return;
     }
     downloadText(`未掌握-${dictMeta.title}-${todayStamp()}.txt`, text, 'text/plain');
@@ -211,20 +212,16 @@ export default function DataBank() {
             </div>
 
             <div className="inline">
-              <button
-                type="button"
-                className={`switch ${includeUnseen ? 'is-on' : ''}`}
-                role="switch"
-                aria-checked={includeUnseen}
-                aria-label="包含未练习词"
-                onClick={() => setIncludeUnseen((v) => !v)}
-              >
-                <i />
-              </button>
-              <span className="setting-label">同时包含从未练习过的词</span>
+              <span className="setting-label">当前可导出</span>
+              <b>{exportable}</b>
+              <span className="setting-desc" style={{ marginTop: 0 }}>
+                词
+              </span>
             </div>
 
             <div className="hint">
+              仅导出<b>选错过且尚未掌握</b>的词（错选 / 漏选 / 多选）；只标记过「不知道」、超时或跳过的词不计入。
+              <br />
               范围为当前词表：{dictMeta?.title ?? '尚未选择（请先到练习台选词表）'}
             </div>
             <button className="btn" type="button" onClick={() => void exportTxt()} disabled={!dict}>

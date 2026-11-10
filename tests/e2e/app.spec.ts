@@ -84,6 +84,61 @@ test('导出存档 JSON', async ({ page }) => {
   expect(typeof parsed.stats).toBe('object');
 });
 
+test('未掌握 TXT 只导出选错过的词', async ({ page }) => {
+  await page.goto('/');
+  // 关掉自动跳题与单击即提交，方便确定性地构造一次错选
+  await page.getByRole('button', { name: '设置' }).click();
+  await page.getByRole('switch', { name: '答对自动下一题' }).click();
+  await page.getByRole('switch', { name: '单选单击即提交' }).click();
+  await page.getByRole('button', { name: '练习台' }).click();
+  await startFirstDict(page);
+
+  const submit = async () => {
+    await page.getByRole('button', { name: /提交/ }).click();
+    await expect(page.locator('.stamp')).toBeVisible();
+  };
+
+  // 1) 只标「不知道」：练过但不算选错，不进 TXT
+  await page.locator('.meta-options .option').nth(1).click();
+  await submit();
+  await expect(page.locator('.stamp')).toHaveText('不知道');
+  await page.getByRole('button', { name: '下一题' }).click();
+
+  // 2) 制造一次确定的选错
+  const missedWord = (await page.locator('.word').textContent())?.trim() ?? '';
+  await page.locator('.options .option').nth(0).click();
+  await submit();
+  if (((await page.locator('.stamp').textContent()) ?? '').trim() === '全对') {
+    await page.getByRole('button', { name: /回退/ }).click();
+    await expect(page.locator('.stamp')).toHaveCount(0);
+    await page.locator('.options .option').nth(1).click();
+    await submit();
+    await expect(page.locator('.stamp')).not.toHaveText('全对');
+  }
+
+  await page.getByRole('button', { name: '存档' }).click();
+  const panel = page.locator('.panel', { hasText: '导出未掌握 TXT' });
+  await expect(panel.locator('.inline', { hasText: '当前可导出' }).locator('b')).toHaveText('1');
+
+  const [download] = await Promise.all([
+    page.waitForEvent('download'),
+    panel.getByRole('button', { name: '导出 TXT' }).click(),
+  ]);
+  const filePath = await download.path();
+  const text = fs.readFileSync(String(filePath), 'utf8');
+  expect(text.trim().split('\n').filter(Boolean)).toEqual([missedWord]);
+});
+
+test('从未选错时 TXT 导出给出提示', async ({ page }) => {
+  await page.goto('/');
+  await page.locator('.dict-row').first().click();
+  await page.getByRole('button', { name: '存档' }).click();
+  const panel = page.locator('.panel', { hasText: '导出未掌握 TXT' });
+  await expect(panel.locator('.inline', { hasText: '当前可导出' }).locator('b')).toHaveText('0');
+  await panel.getByRole('button', { name: '导出 TXT' }).click();
+  await expect(page.locator('.toast')).toContainText('暂无可导出');
+});
+
 test('限时到点自动判为超时', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '设置' }).click();

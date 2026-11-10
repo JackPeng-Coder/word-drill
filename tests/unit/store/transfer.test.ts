@@ -1,8 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildBundle,
+  collectMistaken,
   exportUnmasteredTxt,
   mergeStats,
+  mistakeCount,
   parseBundle,
 } from '../../../src/store/transfer';
 import {
@@ -18,6 +20,8 @@ const words: RawWord[] = [
   ['cancel', [['v.', '取消；撤销']]],
   ['abandon', [['vt.', '放弃；抛弃']]],
   ['bravo', [['n.', '喝彩']]],
+  ['delta', [['n.', '三角洲']]],
+  ['echo', [['v.', '回声']]],
 ];
 
 describe('transfer', () => {
@@ -59,7 +63,14 @@ describe('transfer', () => {
     expect(merged[wordKey(dictId, 'bravo')].seen).toBe(2);
   });
 
-  it('导出未掌握 TXT：只含练过且未掌握的词，格式与排序正确', () => {
+  it('选错次数只统计错选/漏选/多选', () => {
+    expect(mistakeCount({ ...emptyStat(), wrong: 2, missed: 1, over: 3 })).toBe(6);
+    expect(
+      mistakeCount({ ...emptyStat(), unknown: 4, timeouts: 2, skips: 5 }),
+    ).toBe(0);
+  });
+
+  it('导出未掌握 TXT：只含选错过且未掌握的词，格式与排序正确', () => {
     const stats: Stats = {
       [wordKey(dictId, 'cancel')]: {
         ...emptyStat(),
@@ -74,6 +85,7 @@ describe('transfer', () => {
         missed: 1,
         lastAt: 2,
       },
+      // 已掌握：不再导出
       [wordKey(dictId, 'bravo')]: {
         ...emptyStat(),
         seen: 3,
@@ -81,6 +93,21 @@ describe('transfer', () => {
         streak: 3,
         mastered: true,
         lastAt: 3,
+      },
+      // 练过但从未选错（答对一次、未到掌握）：不导出
+      [wordKey(dictId, 'delta')]: {
+        ...emptyStat(),
+        seen: 1,
+        correct: 1,
+        streak: 1,
+        lastAt: 4,
+      },
+      // 只标记过「不知道」：不是选错，不导出
+      [wordKey(dictId, 'echo')]: {
+        ...emptyStat(),
+        seen: 2,
+        unknown: 2,
+        lastAt: 5,
       },
     };
 
@@ -90,7 +117,6 @@ describe('transfer', () => {
       stats,
       format: 'word',
       sort: 'errors',
-      includeUnseen: false,
     });
     expect(wordsOnly.trim().split('\n')).toEqual(['cancel', 'abandon']);
 
@@ -100,22 +126,24 @@ describe('transfer', () => {
       stats,
       format: 'posGloss',
       sort: 'alpha',
-      includeUnseen: false,
     });
     const lines = posGloss.trim().split('\n');
     expect(lines[0]).toBe('abandon\tvt. 放弃；抛弃');
     expect(lines[1]).toBe('cancel\tv. 取消；撤销');
   });
 
-  it('includeUnseen 时包含从未练习的词', () => {
-    const text = exportUnmasteredTxt({
-      dictId,
-      words,
-      stats: {},
-      format: 'word',
-      sort: 'alpha',
-      includeUnseen: true,
-    });
-    expect(text.trim().split('\n')).toEqual(['abandon', 'bravo', 'cancel']);
+  it('没有任何记录时导出为空', () => {
+    expect(
+      exportUnmasteredTxt({ dictId, words, stats: {}, format: 'word', sort: 'alpha' }),
+    ).toBe('');
+  });
+
+  it('collectMistaken 与导出内容一致', () => {
+    const stats: Stats = {
+      [wordKey(dictId, 'cancel')]: { ...emptyStat(), seen: 2, over: 1, lastAt: 1 },
+    };
+    const picked = collectMistaken(dictId, words, stats);
+    expect(picked.map((r) => r.word)).toEqual(['cancel']);
+    expect(picked[0].errors).toBe(1);
   });
 });

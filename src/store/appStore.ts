@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { mergeStats } from './transfer';
 import {
   DEFAULT_SETTINGS,
   MASTERY_STREAK,
@@ -688,7 +689,6 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
   async importBundle(bundle, mode) {
     const state = get();
-    const { mergeStats } = await import('./transfer');
     const stats = mode === 'merge' ? mergeStats(state.stats, bundle.stats) : bundle.stats;
     const settings: Settings = { ...DEFAULT_SETTINGS, ...bundle.settings };
     set({ stats, settings });
