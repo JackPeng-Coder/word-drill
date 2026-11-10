@@ -10,8 +10,8 @@
 /** [词性, 中文释义]；词性可能为空字符串 */
 export type SenseTuple = [pos: string, gloss: string];
 
-/** 单词 [原形, 义项列表] */
-export type RawWord = [word: string, senses: SenseTuple[]];
+/** 单词 [原形, 义项列表, 音标?] */
+export type RawWord = [word: string, senses: SenseTuple[], phonetic?: string];
 
 export interface DictMeta {
   id: string;
@@ -26,8 +26,8 @@ export interface DictMeta {
   posRate: number;
   /** 若为重复词表，指向被保留的词表 id */
   aliasOf: string | null;
-  /** 相对 public/data 的路径 */
-  file: string;
+  /** 相对 public/data 的路径；重复词表（aliasOf 非空）为 null */
+  file: string | null;
 }
 
 export interface Manifest {
@@ -185,6 +185,8 @@ export interface AnswerEvent {
   /** 该题作答耗时（毫秒） */
   elapsedMs: number;
   at: number;
+  /** 撤销该次作答时用于恢复连击与掌握状态 */
+  prev?: { streak: number; mastered: boolean };
 }
 
 export interface Session {
@@ -203,6 +205,8 @@ export interface Session {
   settings: Settings;
   /** 已判分并展示反馈 */
   revealed: boolean;
+  /** 本轮已结束（完成或提前结束） */
+  finished?: boolean;
 }
 
 /* ------------------------------------------------------------------ *
