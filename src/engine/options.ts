@@ -240,6 +240,8 @@ interface Draft {
   correct: boolean;
   tier: number;
   profile?: Profile;
+  /** 该释义所属单词 */
+  word: string;
 }
 
 function freshDraft(entry: RawWord, tier: number): Draft | null {
@@ -248,7 +250,14 @@ function freshDraft(entry: RawWord, tier: number): Draft | null {
   const sense = senses.find((s) => s[0]) ?? senses[0];
   const text = displayText(sense[1] ?? '');
   if (!text) return null;
-  return { pos: sense[0] ?? '', text, correct: false, tier, profile: profileOf(senses) };
+  return {
+    pos: sense[0] ?? '',
+    text,
+    correct: false,
+    tier,
+    profile: profileOf(senses),
+    word: entry[0],
+  };
 }
 
 /* ------------------------------------------------------------------ *
@@ -300,6 +309,7 @@ export function generateItem({
     text: displayText(sense[1] ?? ''),
     correct: true,
     tier: 0,
+    word: word.trim(),
   }));
 
   const need = 4 - correctDrafts.length;
@@ -393,6 +403,7 @@ export function generateItem({
     pos: draft.pos,
     text: draft.text,
     correct: draft.correct,
+    source: draft.word,
   }));
 
   const negative = !positive;
@@ -412,6 +423,9 @@ export function generateItem({
   });
 
   const correctIds = options.filter((o) => o.correct).map((o) => o.id);
+  const answer: SenseTuple[] = usableSenses
+    .slice(0, 3)
+    .map(([pos, gloss]) => [pos, displayText(gloss)] as SenseTuple);
 
   return {
     word: word.trim(),
@@ -421,5 +435,6 @@ export function generateItem({
     correctIds,
     multi: negative ? false : correctIds.length > 1,
     fallback,
+    answer,
   };
 }

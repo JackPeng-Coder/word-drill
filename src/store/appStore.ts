@@ -23,7 +23,7 @@ import { buildQueue } from '../engine/queue';
 import { generateItem } from '../engine/options';
 import { gradeItem } from '../engine/grade';
 import { createRng, hashSeed } from '../engine/rng';
-import { clearAll, loadSnapshot, saveSession, saveSettings, saveStats } from './persist';
+import { clearAll, loadSnapshot, saveSession, saveSettings, saveSettingsNow, saveStats } from './persist';
 import { cleanPhonetic, loadDict, loadManifest, loadPool } from '../data/loader';
 
 export type Screen = 'home' | 'drill' | 'summary' | 'settings' | 'data';
@@ -332,8 +332,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
   updateSettings(patch) {
     const settings = { ...get().settings, ...patch };
     set({ settings });
-    // 设置体积小，立即落盘，避免刷新/关页丢失
-    void saveSettings(settings);
+    // 设置体积小：同步写镜像，避免刚改完立即刷新丢失
+    saveSettingsNow(settings);
     scheduleSave(get);
   },
 

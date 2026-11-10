@@ -39,6 +39,8 @@ test('不知道 → 回退 → 跳过 的流程与统计撤销', async ({ page }
   await page.locator('.meta-options .option').nth(1).click();
   await expect(page.locator('.stamp')).toHaveText('不知道');
   await expect(page.locator('.feedback-note').first()).toContainText('未掌握');
+  // 判分后错误选项要标出来源单词
+  await expect(page.locator('.option-source').first()).toBeVisible();
 
   await page.getByRole('button', { name: /回退/ }).click();
   await expect(page.locator('.stamp')).toHaveCount(0);
@@ -104,11 +106,21 @@ test('提交前后页面不发生竖直位移（桌面 + 手机）', async ({ pa
 
     const measure = () =>
       page.evaluate(() => {
+        // 词头不是 sticky，用布局坐标（累加 offsetTop）测布局位置；
+        // 动作栏是 sticky，滚动会改变它的 offsetTop，因此改测其高度
+        const layoutTop = (el: Element | null) => {
+          let y = 0;
+          let node = el as HTMLElement | null;
+          while (node) {
+            y += node.offsetTop;
+            node = node.offsetParent as HTMLElement | null;
+          }
+          return y;
+        };
         const actions = document.querySelector('.drill-actions') as HTMLElement;
-        const word = document.querySelector('.word') as HTMLElement;
         return {
-          actionsTop: actions.getBoundingClientRect().top,
-          wordTop: word.getBoundingClientRect().top,
+          wordTop: layoutTop(document.querySelector('.word')),
+          actionsHeight: actions.offsetHeight,
           docHeight: document.documentElement.scrollHeight,
         };
       });
@@ -118,8 +130,8 @@ test('提交前后页面不发生竖直位移（桌面 + 手机）', async ({ pa
     await page.waitForTimeout(500);
     const after = await measure();
 
-    expect(Math.abs(after.actionsTop - before.actionsTop)).toBeLessThan(0.6);
     expect(Math.abs(after.wordTop - before.wordTop)).toBeLessThan(0.6);
+    expect(after.actionsHeight).toBe(before.actionsHeight);
     expect(after.docHeight).toBe(before.docHeight);
   }
 });

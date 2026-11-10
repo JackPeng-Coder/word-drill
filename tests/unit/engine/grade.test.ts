@@ -14,6 +14,7 @@ function makeItem(kind: GeneratedItem['kind']): GeneratedItem {
       kind: 'negative',
       multi: false,
       fallback: false,
+      answer: [],
       correctIds: ['none'],
       options: [
         option('s0', false),
@@ -31,6 +32,7 @@ function makeItem(kind: GeneratedItem['kind']): GeneratedItem {
     kind: 'positive',
     multi: true,
     fallback: false,
+    answer: [],
     correctIds: ['s0', 's2'],
     options: [
       option('s0', true),

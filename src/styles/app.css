@@ -723,6 +723,11 @@ a {
   margin: 0;
 }
 
+.feedback-answer b {
+  color: var(--ink);
+  font-family: var(--font-zh);
+}
+
 .drill-counter {
   margin-left: auto;
   font-family: var(--font-mono);
@@ -882,12 +887,33 @@ a {
 }
 
 .option-pos {
-  display: inline-block;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  height: 14px;
+  line-height: 14px;
   font-family: var(--font-mono);
   font-size: 10.5px;
   letter-spacing: 0.04em;
   color: var(--gold);
   margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* 判分后标出该错误释义实际属于哪个单词；行高固定，避免撑高卡片造成页面位移 */
+.option-source {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-left: 0;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  line-height: 14px;
+  letter-spacing: 0.02em;
+  color: var(--muted);
+  font-style: normal;
 }
 
 .option-text {
@@ -1695,6 +1721,11 @@ a {
 
   .drill-actions .kbd {
     display: none;
+  }
+
+  /* 否定题会多出一行「本题正确释义」，预留手机端三行高度 */
+  .drill-feedback {
+    min-height: 72px;
   }
 
   .key-hint {

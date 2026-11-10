@@ -132,6 +132,35 @@ describe('generateItem', () => {
     expect(item.kind).toBe('positive');
   });
 
+  it('释义选项标注来源单词：干扰项是别的词，正确项是本词', () => {
+    const item = generateItem({ ...target, pool: pool(), settings: settings(), prevKind: null, seed: 21 });
+    const senses = item.options.filter((o) => o.kind === 'sense');
+    for (const option of senses) {
+      expect(option.source).toBeTruthy();
+      if (option.correct) expect(option.source?.toLowerCase()).toBe('confuse');
+      else expect(option.source?.toLowerCase()).not.toBe('confuse');
+    }
+  });
+
+  it('answer 给出目标词的正确释义，供「以上都不对」题当场揭晓', () => {
+    const item = generateItem({
+      word: 'confuse',
+      senses: [
+        ['v.', '使困惑；混淆'],
+        ['n.', '混乱'],
+      ],
+      pool: pool(),
+      settings: settings({ noneRate: 1 }),
+      prevKind: null,
+      seed: 8,
+    });
+    expect(item.kind).toBe('negative');
+    expect(item.answer.length).toBe(2);
+    expect(item.answer[0][0]).toBe('v.');
+    expect(item.answer[0][1]).toContain('使困惑');
+    expect(item.answer[1][1]).toContain('混乱');
+  });
+
   it('词池很小也能凑满 4 个释义项', () => {
     const small: PoolFile = {
       version: 1,

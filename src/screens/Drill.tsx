@@ -100,6 +100,23 @@ export default function Drill() {
   }, [revealed, result]);
 
   useEffect(() => {
+    if (!revealed) return;
+    const st = useAppStore.getState();
+    if (st.session?.item?.kind !== 'negative') return;
+    const el = document.querySelector<HTMLElement>('.drill-feedback');
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    // 底部固定操作栏会遮住内容；只在「本题正确释义」被挡住时做最小滚动
+    const visibleBottom = window.innerHeight - 96;
+    if (rect.bottom > visibleBottom) {
+      window.scrollBy({
+        top: Math.min(rect.bottom - visibleBottom + 12, 220),
+        behavior: 'smooth',
+      });
+    }
+  }, [revealed]);
+
+  useEffect(() => {
     if (!revealed || !result || !soundOn) return;
     playStamp(result === 'correct' ? 'ok' : result === 'unknown' || result === 'skip' ? 'neutral' : 'bad');
   }, [revealed, result, soundOn]);
@@ -196,6 +213,7 @@ export default function Drill() {
             letter={OPTION_LETTERS[i]}
             state={optionState(option, picks, revealed)}
             locked={revealed}
+            revealed={revealed}
             onSelect={toggleOption}
           />
         ))}
@@ -208,6 +226,7 @@ export default function Drill() {
             letter="5"
             state={optionState(noneOption, picks, revealed)}
             locked={revealed}
+            revealed={revealed}
             onSelect={toggleOption}
           />
         ) : null}
@@ -217,6 +236,7 @@ export default function Drill() {
             letter="0"
             state={optionState(unknownOption, picks, revealed)}
             locked={revealed}
+            revealed={revealed}
             onSelect={toggleOption}
           />
         ) : null}
@@ -235,6 +255,12 @@ export default function Drill() {
                     : '需要再看一眼'}
             </span>
             <span className="feedback-note">{RESULT_NOTE[result]}</span>
+            {item.kind === 'negative' && item.answer.length ? (
+              <span className="feedback-note feedback-answer">
+                本题正确释义：
+                <b>{item.answer.map(([pos, text]) => (pos ? `${pos} ${text}` : text)).join('；')}</b>
+              </span>
+            ) : null}
           </>
         ) : (
           <span className="feedback-note">

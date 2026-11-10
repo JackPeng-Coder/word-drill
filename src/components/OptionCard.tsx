@@ -6,12 +6,14 @@ interface Props {
   letter?: string;
   state: OptionState;
   locked: boolean;
+  revealed: boolean;
   onSelect: (id: string) => void;
 }
 
-export default function OptionCard({ option, letter, state, locked, onSelect }: Props) {
+export default function OptionCard({ option, letter, state, locked, revealed, onSelect }: Props) {
   const meta = option.kind !== 'sense';
   const mark = optionMark(state);
+  const showSource = revealed && !option.correct && option.kind === 'sense' && Boolean(option.source);
   return (
     <button
       type="button"
@@ -24,7 +26,16 @@ export default function OptionCard({ option, letter, state, locked, onSelect }: 
     >
       {letter ? <span className="option-letter">{letter}</span> : null}
       <span className="option-body">
-        {option.pos ? <span className="option-pos">{option.pos}</span> : null}
+        {option.pos || showSource ? (
+          <span className="option-pos">
+            {option.pos}
+            {showSource ? (
+              <span className="option-source" title={`该释义来自单词 ${option.source}`}>
+                ← {option.source}
+              </span>
+            ) : null}
+          </span>
+        ) : null}
         <span className="option-text" style={{ display: 'block' }}>
           {option.text}
         </span>

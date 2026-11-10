@@ -60,6 +60,8 @@ export interface Option {
   pos: string;
   text: string;
   correct: boolean;
+  /** 该释义所属的单词：干扰项为来源词，正确项为目标词 */
+  source?: string;
 }
 
 export type ItemKind = 'positive' | 'negative';
@@ -75,6 +77,8 @@ export interface GeneratedItem {
   multi: boolean;
   /** 干扰项是否动用了降级/随机回退 */
   fallback: boolean;
+  /** 目标词的正确释义；否定题（4 个选项全错）时用于当场揭晓 */
+  answer: SenseTuple[];
 }
 
 /* ------------------------------------------------------------------ *
