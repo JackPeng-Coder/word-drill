@@ -91,3 +91,35 @@ test('限时到点自动判为超时', async ({ page }) => {
   await expect(page.locator('.stamp')).toHaveText('超时', { timeout: 10_000 });
   await expect(page.locator('.feedback-note').first()).toContainText('超时');
 });
+
+test('提交前后页面不发生竖直位移（桌面 + 手机）', async ({ page }) => {
+  for (const viewport of [
+    { width: 1440, height: 900 },
+    { width: 390, height: 844 },
+  ]) {
+    await page.setViewportSize(viewport);
+    await page.goto('/');
+    await startFirstDict(page);
+    await page.waitForTimeout(450);
+
+    const measure = () =>
+      page.evaluate(() => {
+        const actions = document.querySelector('.drill-actions') as HTMLElement;
+        const word = document.querySelector('.word') as HTMLElement;
+        return {
+          actionsTop: actions.getBoundingClientRect().top,
+          wordTop: word.getBoundingClientRect().top,
+          docHeight: document.documentElement.scrollHeight,
+        };
+      });
+
+    const before = await measure();
+    await page.keyboard.press('0');
+    await page.waitForTimeout(500);
+    const after = await measure();
+
+    expect(Math.abs(after.actionsTop - before.actionsTop)).toBeLessThan(0.6);
+    expect(Math.abs(after.wordTop - before.wordTop)).toBeLessThan(0.6);
+    expect(after.docHeight).toBe(before.docHeight);
+  }
+});

@@ -7,7 +7,6 @@ import {
   OPTION_LETTERS,
   RESULT_NOTE,
   RESULT_ROW_CLASS,
-  correctAnswerText,
   metaOption,
   optionState,
   senseOptions,
@@ -165,7 +164,9 @@ export default function Drill() {
             startedAt={questionStartAt}
             onExpire={timeout}
           />
-        ) : null}
+        ) : (
+          <span className="timer-slot" aria-hidden="true" />
+        )}
         <span className="saved-dot">
           <i />
           自动保存
@@ -221,17 +222,7 @@ export default function Drill() {
         ) : null}
       </div>
 
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'baseline',
-          gap: 14,
-          flexWrap: 'wrap',
-          minHeight: 24,
-          marginTop: 18,
-        }}
-        aria-live="polite"
-      >
+      <div className="drill-feedback" aria-live="polite">
         {revealed && result ? (
           <>
             <span className={`badge ${RESULT_ROW_CLASS[result]}`} style={{ borderColor: 'currentColor' }}>
@@ -244,11 +235,6 @@ export default function Drill() {
                     : '需要再看一眼'}
             </span>
             <span className="feedback-note">{RESULT_NOTE[result]}</span>
-            {result !== 'correct' ? (
-              <span className="feedback-note">
-                正确释义：<b style={{ color: 'var(--ink)' }}>{correctAnswerText(item)}</b>
-              </span>
-            ) : null}
           </>
         ) : (
           <span className="feedback-note">
