@@ -1204,6 +1204,10 @@ a {
   font-size: 13.5px;
   color: var(--ink-2);
   flex: 1;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .wrong-row .r {
