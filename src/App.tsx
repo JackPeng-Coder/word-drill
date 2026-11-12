@@ -34,7 +34,7 @@ function Masthead() {
           <b>{today.attempts ? `${Math.round(today.rate * 100)}%` : '—'}</b>
           <span>正确率</span>
         </div>
-        <div className="mast-stat" title="已练过但未掌握的单词数">
+        <div className="mast-stat" title="练过但尚未掌握的全部词数；同一个词连对 2 次才算掌握">
           <b>{today.unmastered}</b>
           <span>未掌握</span>
         </div>

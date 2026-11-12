@@ -173,6 +173,44 @@ test('单选与多选限时分别默认 10s / 15s，且互不影响', async ({ p
   await expect(multiRow.locator('.seg.is-active')).toHaveText('15s');
 });
 
+test('答对后说明连对进度：还差一次才算掌握', async ({ page }) => {
+  await page.goto('/');
+  // 关掉自动跳题与单击即提交，便于从判色结果反推正确选项
+  await page.getByRole('button', { name: '设置' }).click();
+  await page.getByRole('switch', { name: '答对自动下一题' }).click();
+  await page.getByRole('switch', { name: '单选单击即提交' }).click();
+  await page.getByRole('button', { name: '练习台' }).click();
+  await startFirstDict(page);
+
+  const optionAt = (i: number) => page.locator('.options .option, .meta-options .option').nth(i);
+  const submit = async () => {
+    await page.getByRole('button', { name: /提交/ }).click();
+    await expect(page.locator('.stamp')).toBeVisible();
+  };
+
+  // 先随便选一个：判分后就能看出哪些是正确项
+  await optionAt(0).click();
+  await submit();
+  const correctIdx = await page.evaluate(() => {
+    const els = [...document.querySelectorAll('.options .option, .meta-options .option')];
+    return els
+      .map((el, i) =>
+        el.classList.contains('is-correct') || el.classList.contains('is-missed') ? i : -1,
+      )
+      .filter((i) => i >= 0);
+  });
+  expect(correctIdx.length).toBeGreaterThan(0);
+
+  // 回退后按正确项重新作答，得到一次确定的「全对」
+  await page.getByRole('button', { name: /回退/ }).click();
+  await expect(page.locator('.stamp')).toHaveCount(0);
+  for (const i of correctIdx) await optionAt(i).click();
+  await submit();
+  await expect(page.locator('.stamp')).toHaveText('全对');
+  await expect(page.locator('.feedback-note').first()).toContainText('连对 1/2');
+  await expect(page.locator('.feedback-note').first()).toContainText('再答对一次即掌握');
+});
+
 test('提交前后页面不发生竖直位移（桌面 + 手机）', async ({ page }) => {
   for (const viewport of [
     { width: 1440, height: 900 },

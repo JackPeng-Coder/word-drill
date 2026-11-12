@@ -7,17 +7,19 @@ import {
   OPTION_LETTERS,
   RESULT_NOTE,
   RESULT_ROW_CLASS,
+  masteryNote,
   metaOption,
   optionState,
   senseOptions,
 } from '../lib/result';
 import { playStamp } from '../lib/sound';
-import { limitForQuestion } from '../lib/types';
+import { limitForQuestion, wordKey } from '../lib/types';
 
 export default function Drill() {
   const session = useAppStore((s) => s.session);
   const dictMeta = useAppStore((s) => s.dictMeta);
   const lastGrade = useAppStore((s) => s.lastGrade);
+  const stats = useAppStore((s) => s.stats);
   const questionStartAt = useAppStore((s) => s.questionStartAt);
   const setScreen = useAppStore((s) => s.setScreen);
   const toggleOption = useAppStore((s) => s.toggleOption);
@@ -155,6 +157,7 @@ export default function Drill() {
   const progress = total ? ((index + (revealed ? 1 : 0)) / total) * 100 : 0;
   const limit = limitForQuestion(session.settings, item.multi);
   const isNegative = item.kind === 'negative';
+  const stat = stats[wordKey(session.dictId, item.word)];
 
   return (
     <div className="drill-wrap">
@@ -255,7 +258,11 @@ export default function Drill() {
                     ? '已跳过'
                     : '需要再看一眼'}
             </span>
-            <span className="feedback-note">{RESULT_NOTE[result]}</span>
+            <span className="feedback-note">
+              {result === 'correct'
+                ? `${RESULT_NOTE.correct}${masteryNote(stat?.streak ?? 1, Boolean(stat?.mastered))}`
+                : RESULT_NOTE[result]}
+            </span>
             {item.kind === 'negative' && item.answer.length ? (
               <span className="feedback-note feedback-answer">
                 本题正确释义：

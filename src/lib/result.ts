@@ -1,4 +1,4 @@
-import type { GeneratedItem, Option, ResultKind } from './types';
+import { MASTERY_STREAK, type GeneratedItem, type Option, type ResultKind } from './types';
 
 export const RESULT_LABEL: Record<ResultKind, string> = {
   correct: '全对',
@@ -31,7 +31,7 @@ export const RESULT_ROW_CLASS: Record<ResultKind, string> = {
 };
 
 export const RESULT_NOTE: Record<ResultKind, string> = {
-  correct: '全对，干净利落。',
+  correct: '全对。',
   wrong: '错选：至少一项不属于该词。',
   missed: '漏选：还有正确义项没有选中。',
   over: '多选：选中了可判为错误的释义。',
@@ -39,6 +39,18 @@ export const RESULT_NOTE: Record<ResultKind, string> = {
   timeout: '超时，本词按未掌握处理。',
   skip: '已跳过，计入未掌握。',
 };
+
+/**
+ * 答对之后的掌握进度说明：掌握要求连续答对 MASTERY_STREAK 次，
+ * 只答对一次不算掌握，这里把它讲清楚，避免「我选对了为什么还是未掌握」。
+ */
+export function masteryNote(streak: number, mastered: boolean): string {
+  if (mastered) return `本词已掌握（已连对 ${streak} 次）。`;
+  const left = Math.max(1, MASTERY_STREAK - streak);
+  return left <= 1
+    ? `连对 ${streak}/${MASTERY_STREAK}，再答对一次即掌握。`
+    : `连对 ${streak}/${MASTERY_STREAK}，再连对 ${left} 次即掌握。`;
+}
 
 export type OptionState =
   | 'is-picked'

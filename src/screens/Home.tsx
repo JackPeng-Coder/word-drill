@@ -379,6 +379,8 @@ export default function Home() {
                 绿 = 全对 · 黄 = 漏选 · 蓝 = 多选 · 红 = 错选
                 <br />
                 「不知道」记为未掌握，不算答错。
+                <br />
+                同一个词<strong>连对 2 次</strong>才算掌握；中途错一次会清零连对。
               </div>
             </div>
           </section>
