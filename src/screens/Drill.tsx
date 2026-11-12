@@ -12,6 +12,7 @@ import {
   senseOptions,
 } from '../lib/result';
 import { playStamp } from '../lib/sound';
+import { limitForQuestion } from '../lib/types';
 
 export default function Drill() {
   const session = useAppStore((s) => s.session);
@@ -152,7 +153,7 @@ export default function Drill() {
   const noneOption = metaOption(item, 'none');
   const unknownOption = metaOption(item, 'unknown');
   const progress = total ? ((index + (revealed ? 1 : 0)) / total) * 100 : 0;
-  const limit = session.settings.timeLimitSec;
+  const limit = limitForQuestion(session.settings, item.multi);
   const isNegative = item.kind === 'negative';
 
   return (

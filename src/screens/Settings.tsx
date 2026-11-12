@@ -52,6 +52,7 @@ const TIME_PRESETS: Array<{ value: number; label: string }> = [
   { value: 15, label: '15s' },
   { value: 20, label: '20s' },
   { value: 30, label: '30s' },
+  { value: 45, label: '45s' },
 ];
 
 const SCOPES: Array<{ value: Scope; label: string }> = [
@@ -73,9 +74,34 @@ export default function Settings() {
   const setScreen = useAppStore((s) => s.setScreen);
 
   const clampTime = (value: number) => {
-    const { min, max } = SETTINGS_LIMITS.timeLimitSec;
+    const { min, max } = SETTINGS_LIMITS.timeLimit;
     return Math.min(max, Math.max(min, Math.round(value) || 0));
   };
+
+  const timeControls = (value: number, onChange: (next: number) => void, ariaLabel: string) => (
+    <div className="inline">
+      {TIME_PRESETS.map((p) => (
+        <button
+          key={p.value}
+          type="button"
+          className={`seg ${value === p.value ? 'is-active' : ''}`}
+          style={{ border: '1px solid var(--line-strong)', borderRadius: 4, padding: '6px 10px' }}
+          onClick={() => onChange(p.value)}
+        >
+          {p.label}
+        </button>
+      ))}
+      <input
+        className="num-input"
+        type="number"
+        min={0}
+        max={300}
+        value={value}
+        aria-label={ariaLabel}
+        onChange={(e) => onChange(clampTime(Number(e.target.value)))}
+      />
+    </div>
+  );
 
   return (
     <div>
@@ -91,31 +117,25 @@ export default function Settings() {
           </div>
           <div>
             <Row
-              label="每题限时"
-              desc="超时自动判为未掌握；切到后台会暂停计时。"
+              label="单选限时"
+              desc="单选题的作答时间；超时按未掌握处理，切到后台会暂停计时。"
             >
-              <div className="inline">
-                {TIME_PRESETS.map((p) => (
-                  <button
-                    key={p.value}
-                    type="button"
-                    className={`seg ${settings.timeLimitSec === p.value ? 'is-active' : ''}`}
-                    style={{ border: '1px solid var(--line-strong)', borderRadius: 4, padding: '6px 10px' }}
-                    onClick={() => update({ timeLimitSec: p.value })}
-                  >
-                    {p.label}
-                  </button>
-                ))}
-                <input
-                  className="num-input"
-                  type="number"
-                  min={0}
-                  max={300}
-                  value={settings.timeLimitSec}
-                  aria-label="自定义限时秒数"
-                  onChange={(e) => update({ timeLimitSec: clampTime(Number(e.target.value)) })}
-                />
-              </div>
+              {timeControls(
+                settings.timeLimitSingleSec,
+                (v) => update({ timeLimitSingleSec: v }),
+                '单选自定义限时秒数',
+              )}
+            </Row>
+
+            <Row
+              label="多选限时"
+              desc="不定项多选要比对多个义项，通常给得更宽松。"
+            >
+              {timeControls(
+                settings.timeLimitMultiSec,
+                (v) => update({ timeLimitMultiSec: v }),
+                '多选自定义限时秒数',
+              )}
             </Row>
 
             <Row label="每轮题数" desc="一轮结束后可只练错词或重开一轮。">

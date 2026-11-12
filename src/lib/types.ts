@@ -110,8 +110,10 @@ export type OrderMode = 'sequential' | 'random';
 export type Scope = 'all' | 'unmastered' | 'new' | 'wrongFirst';
 
 export interface Settings {
-  /** 每题限时秒数，0 表示不限时 */
-  timeLimitSec: number;
+  /** 单选题每题限时秒数，0 表示不限时 */
+  timeLimitSingleSec: number;
+  /** 多选（不定项）每题限时秒数，0 表示不限时 */
+  timeLimitMultiSec: number;
   /** 多义项是否启用不定项多选 */
   multiSense: boolean;
   /** 「以上都不对」作为正确答案的概率 0..1 */
@@ -137,7 +139,8 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  timeLimitSec: 15,
+  timeLimitSingleSec: 10,
+  timeLimitMultiSec: 15,
   multiSense: true,
   noneRate: 0.12,
   showPhonetic: true,
@@ -152,7 +155,7 @@ export const DEFAULT_SETTINGS: Settings = {
 };
 
 export const SETTINGS_LIMITS = {
-  timeLimitSec: { min: 0, max: 300, step: 1 },
+  timeLimit: { min: 0, max: 300, step: 1 },
   noneRate: { min: 0, max: 0.4, step: 0.02 },
 } as const;
 
@@ -237,6 +240,37 @@ export function wordKey(dictId: string, word: string): string {
 }
 
 export const MASTERY_STREAK = 2;
+
+/** 当前题（单选 / 多选）适用的限时秒数 */
+export function limitForQuestion(settings: Settings, multi: boolean): number {
+  return multi ? settings.timeLimitMultiSec : settings.timeLimitSingleSec;
+}
+
+function clampSec(value: unknown, fallback: number): number {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
+  const { min, max } = SETTINGS_LIMITS.timeLimit;
+  return Math.min(max, Math.max(min, Math.round(value)));
+}
+
+/**
+ * 把任意来源（存档 / 旧版本快照）的设置整理成当前结构：
+ * 旧版只有一个 timeLimitSec，迁移时单选与多选都用它。
+ */
+export function normalizeSettings(raw: unknown): Settings {
+  const input =
+    typeof raw === 'object' && raw !== null
+      ? (raw as Partial<Settings> & { timeLimitSec?: unknown })
+      : {};
+  const settings: Settings = { ...DEFAULT_SETTINGS, ...input };
+  const legacy = typeof input.timeLimitSec === 'number' ? input.timeLimitSec : null;
+  if (legacy !== null) {
+    if (typeof input.timeLimitSingleSec !== 'number') settings.timeLimitSingleSec = legacy;
+    if (typeof input.timeLimitMultiSec !== 'number') settings.timeLimitMultiSec = legacy;
+  }
+  settings.timeLimitSingleSec = clampSec(settings.timeLimitSingleSec, DEFAULT_SETTINGS.timeLimitSingleSec);
+  settings.timeLimitMultiSec = clampSec(settings.timeLimitMultiSec, DEFAULT_SETTINGS.timeLimitMultiSec);
+  return settings;
+}
 
 export function emptyStat(): WordStat {
   return {

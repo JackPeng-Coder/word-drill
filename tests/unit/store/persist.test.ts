@@ -26,13 +26,13 @@ describe('persist（IndexedDB 不可用时降级为内存）', () => {
   });
 
   it('设置 / 统计 / 会话可保存并读回', async () => {
-    await saveSettings({ ...DEFAULT_SETTINGS, order: 'random', timeLimitSec: 30 });
+    await saveSettings({ ...DEFAULT_SETTINGS, order: 'random', timeLimitSingleSec: 30 });
     await saveStats({ 'cet4:cancel': { ...emptyStat(), seen: 1 } });
     await saveSession(session);
 
     const snapshot = await loadSnapshot();
     expect(snapshot.settings?.order).toBe('random');
-    expect(snapshot.settings?.timeLimitSec).toBe(30);
+    expect(snapshot.settings?.timeLimitSingleSec).toBe(30);
     expect(snapshot.stats?.['cet4:cancel'].seen).toBe(1);
     expect(snapshot.session?.id).toBe('s1');
   });

@@ -142,11 +142,35 @@ test('从未选错时 TXT 导出给出提示', async ({ page }) => {
 test('限时到点自动判为超时', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: '设置' }).click();
-  await page.getByLabel('自定义限时秒数').fill('3');
+  await page.getByLabel('单选自定义限时秒数').fill('3');
+  await page.getByLabel('多选自定义限时秒数').fill('3');
   await page.getByRole('button', { name: '练习台' }).click();
   await startFirstDict(page);
   await expect(page.locator('.stamp')).toHaveText('超时', { timeout: 10_000 });
   await expect(page.locator('.feedback-note').first()).toContainText('超时');
+});
+
+test('单选与多选限时分别默认 10s / 15s，且互不影响', async ({ page }) => {
+  await page.goto('/');
+  await page.getByRole('button', { name: '设置' }).click();
+  const singleRow = page.locator('.setting-row', { hasText: '单选限时' });
+  const multiRow = page.locator('.setting-row', { hasText: '多选限时' });
+  await expect(singleRow.locator('.seg.is-active')).toHaveText('10s');
+  await expect(multiRow.locator('.seg.is-active')).toHaveText('15s');
+
+  // 练习页的倒计时按题型取限时
+  await page.getByRole('button', { name: '练习台' }).click();
+  await startFirstDict(page);
+  const label = (await page.locator('.word-label').textContent()) ?? '';
+  const expectedTitle = label.includes('不定项') ? '本题限时 15 秒' : '本题限时 10 秒';
+  await expect(page.locator('.timer')).toHaveAttribute('title', expectedTitle);
+
+  // 改单选限时不应影响多选
+  await page.getByRole('button', { name: '设置' }).click();
+  await page.getByLabel('单选自定义限时秒数').fill('7');
+  await expect(singleRow.locator('.seg.is-active')).toHaveCount(0);
+  await expect(page.getByLabel('多选自定义限时秒数')).toHaveValue('15');
+  await expect(multiRow.locator('.seg.is-active')).toHaveText('15s');
 });
 
 test('提交前后页面不发生竖直位移（桌面 + 手机）', async ({ page }) => {

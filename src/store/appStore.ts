@@ -4,6 +4,8 @@ import {
   DEFAULT_SETTINGS,
   MASTERY_STREAK,
   emptyStat,
+  limitForQuestion,
+  normalizeSettings,
   wordKey,
   type AnswerEvent,
   type DictFile,
@@ -269,9 +271,12 @@ export const useAppStore = create<AppState>()((set, get) => ({
     if (get().booted) return;
     try {
       const [snapshot, manifest] = await Promise.all([loadSnapshot(), loadManifest()]);
-      const settings: Settings = { ...DEFAULT_SETTINGS, ...(snapshot.settings ?? {}) };
+      const settings = normalizeSettings(snapshot.settings);
       const stats: Stats = snapshot.stats ?? {};
-      const session: Session | null = snapshot.session ?? null;
+      const rawSession = snapshot.session ?? null;
+      const session: Session | null = rawSession
+        ? { ...rawSession, settings: normalizeSettings(rawSession.settings) }
+        : null;
       set({
         manifest,
         settings,
@@ -502,7 +507,8 @@ export const useAppStore = create<AppState>()((set, get) => ({
   timeout() {
     const state = get();
     const session = state.session;
-    if (!session || !session.item || session.revealed || session.settings.timeLimitSec <= 0) return;
+    if (!session || !session.item || session.revealed) return;
+    if (limitForQuestion(session.settings, session.item.multi) <= 0) return;
     const at = Date.now();
     const key = wordKey(session.dictId, session.item.word);
     const prevStat = state.stats[key];
@@ -690,7 +696,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
   async importBundle(bundle, mode) {
     const state = get();
     const stats = mode === 'merge' ? mergeStats(state.stats, bundle.stats) : bundle.stats;
-    const settings: Settings = { ...DEFAULT_SETTINGS, ...bundle.settings };
+    const settings = normalizeSettings(bundle.settings);
     set({ stats, settings });
     scheduleSave(get);
   },
