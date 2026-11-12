@@ -6,6 +6,7 @@ import {
   emptyStat,
   limitForQuestion,
   normalizeSettings,
+  normalizeStats,
   wordKey,
   type AnswerEvent,
   type DictFile,
@@ -272,7 +273,7 @@ export const useAppStore = create<AppState>()((set, get) => ({
     try {
       const [snapshot, manifest] = await Promise.all([loadSnapshot(), loadManifest()]);
       const settings = normalizeSettings(snapshot.settings);
-      const stats: Stats = snapshot.stats ?? {};
+      const stats = normalizeStats(snapshot.stats ?? {});
       const rawSession = snapshot.session ?? null;
       const session: Session | null = rawSession
         ? { ...rawSession, settings: normalizeSettings(rawSession.settings) }
@@ -695,7 +696,9 @@ export const useAppStore = create<AppState>()((set, get) => ({
 
   async importBundle(bundle, mode) {
     const state = get();
-    const stats = mode === 'merge' ? mergeStats(state.stats, bundle.stats) : bundle.stats;
+    const stats = normalizeStats(
+      mode === 'merge' ? mergeStats(state.stats, bundle.stats) : bundle.stats,
+    );
     const settings = normalizeSettings(bundle.settings);
     set({ stats, settings });
     scheduleSave(get);

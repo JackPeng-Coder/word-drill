@@ -239,7 +239,21 @@ export function wordKey(dictId: string, word: string): string {
   return `${dictId}:${word.trim().toLowerCase()}`;
 }
 
-export const MASTERY_STREAK = 2;
+/**
+ * 掌握门槛：答对（全对）一次即视为掌握，错误/漏选/多选/不知道/超时/跳过会打回未掌握。
+ * 若以后想更严格，把这个数字调大即可，存储里的 mastered 会在启动时按它重新对齐。
+ */
+export const MASTERY_STREAK = 1;
+
+/** 连对次数与掌握状态始终一致；旧存档或跨版本导入后按当前门槛对齐一次 */
+export function normalizeStats(stats: Stats): Stats {
+  const out: Stats = {};
+  for (const [key, stat] of Object.entries(stats)) {
+    const mastered = stat.streak >= MASTERY_STREAK;
+    out[key] = stat.mastered === mastered ? stat : { ...stat, mastered };
+  }
+  return out;
+}
 
 /** 当前题（单选 / 多选）适用的限时秒数 */
 export function limitForQuestion(settings: Settings, multi: boolean): number {

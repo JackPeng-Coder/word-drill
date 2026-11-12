@@ -380,7 +380,7 @@ export default function Home() {
                 <br />
                 「不知道」记为未掌握，不算答错。
                 <br />
-                同一个词<strong>连对 2 次</strong>才算掌握；中途错一次会清零连对。
+                答对一次即视为掌握；之后答错会打回未掌握。
               </div>
             </div>
           </section>
